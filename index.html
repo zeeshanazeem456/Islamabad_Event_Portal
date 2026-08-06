@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Islamabad Event Portal | Coding Competitions, Hackathons & Bootcamps</title>
+  <meta name="description" content="Discover tech events in Islamabad including Hackathons, Coding Competitions, Bootcamps, and Workshops. Post events as an Event Manager using Supabase backend.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Feather / Lucide Icons via Unpkg CDN & Supabase JS CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+
+  <!-- TOP NAVBAR -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" id="brandHome">
+        <div class="brand-logo">CE</div>
+        <span class="brand-name">CityEventHub <span class="brand-badge">ISLAMABAD</span></span>
+      </div>
+
+      <nav class="nav-links">
+        <button class="nav-link active" id="navEventsBtn">Explore Events</button>
+        <button class="nav-link" id="navHandlersBtn">Organizer Portal</button>
+        <button class="nav-link" id="navSavedBtn">Saved Events <span class="badge-count" id="savedCountBadge">0</span></button>
+      </nav>
+
+      <div class="nav-actions">
+        <div id="userAuthSection">
+          <button class="btn-secondary" id="openAuthBtn">Sign in</button>
+        </div>
+        <button class="btn-primary" id="openPostEventBtn">
+          <i data-lucide="plus"></i> Post event
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-section">
+    <div class="hero-bg-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-tag">
+        <i data-lucide="sparkles"></i> OFFICIAL CITY EVENT GATEWAY • ISLAMABAD
+      </div>
+      <h1 class="hero-title">
+        Discover competitions, hackathons, and programs from trusted organizers.
+      </h1>
+      <p class="hero-subtitle">
+        Your central hub for Islamabad tech opportunities. Find competitive coding rounds, 36-hour hackathons, bootcamps, and hiring events happening at FAST-NUCES, NUST, NSU, COMSATS & across the capital.
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-pill">
+          <span class="stat-num" id="statTotalEvents">6+</span>
+          <span class="stat-label">Active Events</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-pill">
+          <span class="stat-num">PKR 850K+</span>
+          <span class="stat-label">Prize Pools</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-pill">
+          <span class="stat-num">12+</span>
+          <span class="stat-label">Islamabad Hubs</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="main-container">
+
+    <!-- BOARD HEADER & FILTERS -->
+    <section class="board-section">
+      <div class="board-header">
+        <div>
+          <div class="section-kicker">LIVE OPPORTUNITY BOARD</div>
+          <h2 class="section-title" id="boardTitleText">Find your next city event</h2>
+        </div>
+        <div class="event-count-badge">
+          <span id="eventCountNum">0</span> events available
+        </div>
+      </div>
+
+      <!-- FILTER BAR CONTAINER -->
+      <div class="filter-bar-card">
+        <div class="filter-grid">
+          <!-- Search Input -->
+          <div class="filter-group filter-search">
+            <label for="searchInput">Search</label>
+            <div class="input-with-icon">
+              <i data-lucide="search"></i>
+              <input type="text" id="searchInput" placeholder="Search competition, organizer, skill...">
+            </div>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="filter-group">
+            <label for="categoryFilter">Category</label>
+            <div class="select-wrapper">
+              <select id="categoryFilter">
+                <option value="all">All categories</option>
+                <option value="Coding Competition">Coding Competition</option>
+                <option value="Hackathon">Hackathon</option>
+                <option value="Bootcamp">Bootcamp</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Career Program">Career Program</option>
+                <option value="Other">Other</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-icon"></i>
+            </div>
+          </div>
+
+          <!-- Format Filter -->
+          <div class="filter-group">
+            <label for="formatFilter">Format</label>
+            <div class="select-wrapper">
+              <select id="formatFilter">
+                <option value="all">Any format</option>
+                <option value="In-Person">In-Person Islamabad</option>
+                <option value="Online">Online</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-icon"></i>
+            </div>
+          </div>
+
+          <!-- Sort Filter -->
+          <div class="filter-group">
+            <label for="sortFilter">Sort</label>
+            <div class="select-wrapper">
+              <select id="sortFilter">
+                <option value="deadline">Application deadline</option>
+                <option value="startDate">Event start date</option>
+                <option value="newest">Recently added</option>
+              </select>
+              <i data-lucide="chevron-down" class="select-icon"></i>
+            </div>
+          </div>
+
+          <!-- Reset Button -->
+          <div class="filter-group filter-actions">
+            <button class="btn-reset" id="resetFiltersBtn">Reset</button>
+          </div>
+        </div>
+
+        <!-- ACTIVE FILTER TAGS -->
+        <div class="active-tags-row" id="activeTagsRow" style="display: none;">
+          <span class="tags-label">Active filters:</span>
+          <div class="tags-container" id="activeTagsContainer"></div>
+        </div>
+      </div>
+
+      <!-- EVENT CARDS GRID -->
+      <div class="events-grid" id="eventsGrid">
+        <!-- Event cards injected dynamically via JS -->
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon"><i data-lucide="calendar-x"></i></div>
+        <h3>No events match your criteria</h3>
+        <p>Try adjusting your search terms, categories, or resetting active filters.</p>
+        <button class="btn-primary" id="clearFiltersBtn">Show All Events</button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- EVENT DETAIL MODAL -->
+  <div class="modal-backdrop" id="eventDetailModal" style="display: none;">
+    <div class="modal-box modal-lg">
+      <button class="modal-close" id="closeDetailModalBtn"><i data-lucide="x"></i></button>
+
+      <div class="modal-banner-wrap" id="detailBannerContainer">
+        <img id="detailBanner" src="" alt="Event Banner" class="modal-banner">
+        <div class="modal-banner-badges">
+          <span class="category-pill" id="detailCategory">Category</span>
+          <span class="official-badge" id="detailOfficial">Official</span>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-header-row">
+          <div>
+            <span class="detail-organizer" id="detailOrganizer">Organizer Name</span>
+            <h2 class="detail-title" id="detailTitle">Event Title</h2>
+          </div>
+          <button class="btn-bookmark-lg" id="detailBookmarkBtn" title="Save Event">
+            <i data-lucide="bookmark" id="detailBookmarkIcon"></i>
+          </button>
+        </div>
+
+        <!-- KEY METRICS GRID -->
+        <div class="detail-metrics-grid">
+          <div class="metric-card">
+            <i data-lucide="calendar"></i>
+            <div>
+              <span class="metric-label">Event Date</span>
+              <span class="metric-val" id="detailDates">Aug 25, 2026</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <i data-lucide="clock"></i>
+            <div>
+              <span class="metric-label">Apply Before</span>
+              <span class="metric-val" id="detailDeadline">Aug 20, 2026</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <i data-lucide="map-pin"></i>
+            <div>
+              <span class="metric-label">Location / Sector</span>
+              <span class="metric-val" id="detailSector">H-12 Islamabad</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <i data-lucide="trophy"></i>
+            <div>
+              <span class="metric-label">Prize / Fee</span>
+              <span class="metric-val" id="detailPrize">PKR 300,000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESCRIPTION & AGENDA -->
+        <div class="detail-content-section">
+          <h3>About this Event</h3>
+          <p id="detailDescription">Detailed description goes here...</p>
+
+          <div id="detailAgendaBox" class="agenda-box" style="display:none;">
+            <h4><i data-lucide="list-checks"></i> Event Agenda & Highlights</h4>
+            <p id="detailAgendaText"></p>
+          </div>
+        </div>
+
+        <!-- RSVP / NOTIFY SUBSCRIPTION BOX -->
+        <div class="rsvp-sub-card">
+          <div class="sub-text">
+            <i data-lucide="bell" class="bell-icon"></i>
+            <div>
+              <h4>Get Notified & Receive Updates</h4>
+              <p>Enter your email to get calendar reminders and deadline notifications for this event.</p>
+            </div>
+          </div>
+          <form class="sub-form" id="rsvpForm">
+            <input type="email" id="rsvpEmail" placeholder="your.name@domain.com" required>
+            <button type="submit" class="btn-secondary">Remind Me</button>
+          </form>
+        </div>
+
+        <!-- ACTION FOOTER -->
+        <div class="detail-footer">
+          <button class="btn-secondary" id="detailShareBtn">
+            <i data-lucide="share-2"></i> Share Event
+          </button>
+          <a href="#" target="_blank" rel="noopener noreferrer" class="btn-primary btn-cta" id="detailRegisterLink">
+            Register / Official Page <i data-lucide="external-link"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST EVENT MODAL -->
+  <div class="modal-backdrop" id="postEventModal" style="display: none;">
+    <div class="modal-box modal-md">
+      <button class="modal-close" id="closePostModalBtn"><i data-lucide="x"></i></button>
+
+      <div class="modal-header">
+        <h2 id="postModalTitle">Post New Islamabad Tech Event</h2>
+        <p class="modal-subtitle">Share your upcoming competition, hackathon, or workshop with Islamabad developer community.</p>
+      </div>
+
+      <form id="postEventForm" class="form-grid">
+        <input type="hidden" id="editEventId" value="">
+
+        <div class="form-group span-2">
+          <label for="postTitle">Event Title *</label>
+          <input type="text" id="postTitle" placeholder="e.g. Islamabad AI & Cloud Hackathon 2026" required>
+        </div>
+
+        <div class="form-group">
+          <label for="postCategory">Category *</label>
+          <select id="postCategory" required>
+            <option value="Coding Competition">Coding Competition</option>
+            <option value="Hackathon">Hackathon</option>
+            <option value="Bootcamp">Bootcamp</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Career Program">Career Program</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="customCategoryGroup" style="display: none;">
+          <label for="postCustomCategory">Custom Category Name *</label>
+          <input type="text" id="postCustomCategory" placeholder="e.g. AI Hackathon, Game Jam, Seminar">
+        </div>
+
+        <div class="form-group">
+          <label for="postFormat">Format *</label>
+          <select id="postFormat" required>
+            <option value="In-Person">In-Person Islamabad</option>
+            <option value="Online">Online / Remote</option>
+            <option value="Hybrid">Hybrid</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="postSector">Sector / Venue Address *</label>
+          <input type="text" id="postSector" placeholder="e.g. FAST-NUCES H-11, Islamabad" required>
+        </div>
+
+        <div class="form-group">
+          <label for="postOrganizer">Organizer / Institution *</label>
+          <input type="text" id="postOrganizer" placeholder="e.g. NUST ACM Chapter" required>
+        </div>
+
+        <div class="form-group">
+          <label for="postStartDate">Event Start Date *</label>
+          <input type="date" id="postStartDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="postDeadline">Application Deadline *</label>
+          <input type="date" id="postDeadline" required>
+        </div>
+
+        <div class="form-group">
+          <label for="postPrize">Prize Pool / Fee</label>
+          <input type="text" id="postPrize" placeholder="e.g. PKR 250,000 or Free">
+        </div>
+
+        <div class="form-group">
+          <label for="postRegisterUrl">Registration / Official URL *</label>
+          <input type="url" id="postRegisterUrl" placeholder="https://..." required>
+        </div>
+
+        <!-- POSTER IMAGE CHOICE & UPLOAD -->
+        <div class="form-group span-2">
+          <label>Event Poster Image *</label>
+          <div class="image-mode-tabs">
+            <button type="button" class="img-mode-btn active" id="modeUploadBtn"><i data-lucide="upload"></i> Upload Image File</button>
+            <button type="button" class="img-mode-btn" id="modeUrlBtn"><i data-lucide="link"></i> Web Image URL</button>
+          </div>
+        </div>
+
+        <!-- FILE UPLOAD DROPZONE -->
+        <div class="form-group span-2" id="uploadGroup">
+          <div class="upload-dropzone" id="dropzoneBox">
+            <i data-lucide="upload-cloud" class="upload-icon-lg"></i>
+            <div class="dropzone-text">
+              <strong>Click to choose image file</strong> or drag & drop poster here
+            </div>
+            <span class="dropzone-sub">Supports PNG, JPG, WEBP or GIF (Max 5MB)</span>
+            <input type="file" id="postImageFile" accept="image/*" style="display: none;">
+          </div>
+
+          <div id="imagePreviewContainer" class="image-preview-container" style="display: none;">
+            <img id="imagePreview" src="" alt="Poster Image Preview">
+            <div class="preview-actions">
+              <span class="preview-filename" id="previewFilename">image.png</span>
+              <button type="button" id="removeImageBtn" class="btn-remove-image"><i data-lucide="trash-2"></i> Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUSTOM URL -->
+        <div class="form-group span-2" id="customUrlGroup" style="display: none;">
+          <label for="postCustomBanner">Image Web URL</label>
+          <input type="url" id="postCustomBanner" placeholder="https://images.unsplash.com/...">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="postDescription">Full Description *</label>
+          <textarea id="postDescription" rows="4" placeholder="Describe the target audience, rules, eligibility, and benefits..." required></textarea>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="postAgenda">Agenda & Highlights (Optional)</label>
+          <textarea id="postAgenda" rows="2" placeholder="Keynote, Coding Rounds, Pitching session, Lunch..."></textarea>
+        </div>
+
+        <div class="modal-footer span-2">
+          <button type="button" class="btn-secondary" id="cancelPostBtn">Cancel</button>
+          <button type="submit" class="btn-primary" id="saveEventSubmitBtn">
+            <i data-lucide="check"></i> Publish Event
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL (Sign In for Event Managers) -->
+  <div class="modal-backdrop" id="authModal" style="display: none;">
+    <div class="modal-box modal-sm">
+      <button class="modal-close" id="closeAuthModalBtn"><i data-lucide="x"></i></button>
+
+      <div class="modal-header text-center">
+        <div class="auth-icon-badge"><i data-lucide="user-check"></i></div>
+        <h2>Event Manager Portal</h2>
+        <p class="modal-subtitle">Sign in to publish, edit, and manage your tech events.</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabSignin">Sign In</button>
+        <button class="auth-tab" id="tabSignup">Create Account</button>
+      </div>
+
+      <form id="authForm" class="form-grid">
+        <div class="form-group span-2" id="nameGroup" style="display: none;">
+          <label for="authName">Full Name / Organization Name</label>
+          <input type="text" id="authName" placeholder="e.g. Islamabad AI Society">
+        </div>
+
+        <div class="form-group span-2">
+          <label for="authEmail">Email Address</label>
+          <input type="email" id="authEmail" placeholder="manager@organization.com" required>
+        </div>
+
+        <div class="form-group span-2">
+          <label for="authPassword">Password</label>
+          <input type="password" id="authPassword" placeholder="••••••••" required>
+        </div>
+
+        <div class="span-2">
+          <button type="submit" class="btn-primary width-full" id="authSubmitBtn">
+            Sign In as Event Manager
+          </button>
+        </div>
+      </form>
+
+      <p class="auth-footer-note">
+        Guests do not need to sign in to browse, filter, or bookmark events.
+      </p>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- MAIN ENTRY MODULE -->
+  <script type="module" src="src/js/app.js"></script>
+</body>
+</html>

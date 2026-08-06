@@ -1,0 +1,15 @@
+# Environment variable secrets
+.env
+.env.local
+*.env
+
+# Dependencies & Build outputs
+node_modules/
+dist/
+.cache/
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
