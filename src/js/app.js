@@ -750,6 +750,74 @@ function setupEventListeners() {
       copyTextToClipboard(num, `Easypaisa number (${num}) copied to clipboard! Thank you ☕`);
     });
   }
+
+  // Footer Navigation & Actions
+  const footerNavEvents = document.getElementById('footerNavEvents');
+  if (footerNavEvents) {
+    footerNavEvents.addEventListener('click', () => {
+      switchTab('events');
+      document.getElementById('eventsBoardView')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  const footerNavCalendar = document.getElementById('footerNavCalendar');
+  if (footerNavCalendar) {
+    footerNavCalendar.addEventListener('click', () => {
+      switchTab('calendar');
+      document.getElementById('calendarView')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  const footerNavSaved = document.getElementById('footerNavSaved');
+  if (footerNavSaved) {
+    footerNavSaved.addEventListener('click', () => {
+      switchTab('saved');
+      document.getElementById('eventsBoardView')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  const footerNavPost = document.getElementById('footerNavPost');
+  if (footerNavPost) {
+    footerNavPost.addEventListener('click', () => {
+      if (!state.currentUser) {
+        showToast('Please sign in as an Event Manager to post an event.', 'warning');
+        openModal(elements.authModal);
+      } else {
+        openPostModal();
+      }
+    });
+  }
+
+  const footerSupportBtn = document.getElementById('footerSupportBtn');
+  if (footerSupportBtn) {
+    footerSupportBtn.addEventListener('click', () => {
+      const supportModal = document.getElementById('supportModal');
+      if (supportModal) {
+        openModal(supportModal);
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  const backToTopBtn = document.getElementById('backToTopBtn');
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  document.querySelectorAll('.footer-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      if (cat) {
+        state.activeFilters.category = cat;
+        if (elements.categoryFilter) elements.categoryFilter.value = cat;
+        switchTab('events');
+        applyFilters();
+        document.getElementById('eventsBoardView')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
 }
 
 function copyTextToClipboard(text, successMsg) {
