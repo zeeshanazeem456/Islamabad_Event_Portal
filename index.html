@@ -740,6 +740,35 @@
     <span>Support Us</span>
   </button>
 
+  <!-- MOBILE BOTTOM NAVIGATION (Visible on mobile/tablets < 768px) -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button type="button" class="mobile-nav-item active" id="mobileNavEvents" data-tab="events">
+      <i data-lucide="compass"></i>
+      <span>Explore</span>
+    </button>
+    <button type="button" class="mobile-nav-item" id="mobileNavCalendar" data-tab="calendar">
+      <i data-lucide="calendar"></i>
+      <span>Calendar</span>
+    </button>
+    <button type="button" class="mobile-nav-item mobile-nav-action" id="mobileNavPost" title="Post an Event">
+      <div class="mobile-action-circle">
+        <i data-lucide="plus"></i>
+      </div>
+      <span>Post</span>
+    </button>
+    <button type="button" class="mobile-nav-item" id="mobileNavSaved" data-tab="saved">
+      <div class="mobile-nav-icon-wrap">
+        <i data-lucide="bookmark"></i>
+        <span class="badge-count mobile-badge" id="mobileSavedBadge" style="display: none;">0</span>
+      </div>
+      <span>Saved</span>
+    </button>
+    <button type="button" class="mobile-nav-item" id="mobileNavProfile">
+      <i data-lucide="user"></i>
+      <span id="mobileNavProfileText">Sign In</span>
+    </button>
+  </nav>
+
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div class="toast-container" id="toastContainer"></div>
 

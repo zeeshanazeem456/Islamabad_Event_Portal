@@ -180,6 +180,7 @@ async function initApp() {
     console.warn("Session check exception:", err);
   }
   
+  updateSavedBadges();
   updateUserUI();
   
   loadEvents().catch(err => {
@@ -545,6 +546,53 @@ function setupEventListeners() {
   if (navAdminBtn) navAdminBtn.addEventListener('click', () => switchTab('admin'));
   if (navSavedBtn) navSavedBtn.addEventListener('click', () => switchTab('saved'));
 
+  // Mobile Bottom Nav Items
+  const mobileNavEvents = document.getElementById('mobileNavEvents');
+  const mobileNavCalendar = document.getElementById('mobileNavCalendar');
+  const mobileNavPost = document.getElementById('mobileNavPost');
+  const mobileNavSaved = document.getElementById('mobileNavSaved');
+  const mobileNavProfile = document.getElementById('mobileNavProfile');
+
+  if (mobileNavEvents) {
+    mobileNavEvents.addEventListener('click', () => {
+      switchTab('events');
+      document.getElementById('eventsBoardView')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+  if (mobileNavCalendar) {
+    mobileNavCalendar.addEventListener('click', () => {
+      switchTab('calendar');
+      document.getElementById('calendarView')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+  if (mobileNavPost) {
+    mobileNavPost.addEventListener('click', () => {
+      if (!state.currentUser) {
+        showToast('Please sign in as an Event Manager to post an event.', 'warning');
+        openModal(elements.authModal);
+      } else {
+        openPostModal();
+      }
+    });
+  }
+  if (mobileNavSaved) {
+    mobileNavSaved.addEventListener('click', () => {
+      switchTab('saved');
+      document.getElementById('eventsBoardView')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+  if (mobileNavProfile) {
+    mobileNavProfile.addEventListener('click', () => {
+      if (!state.currentUser) {
+        openModal(elements.authModal);
+      } else if (state.currentUser.role === 'admin') {
+        switchTab('admin');
+      } else {
+        switchTab('handlers');
+      }
+    });
+  }
+
   // Admin Search
   const adminSearch = elements.adminSearchInput || document.getElementById('adminSearchInput');
   if (adminSearch) adminSearch.addEventListener('input', renderAdminDashboard);
@@ -869,6 +917,17 @@ function switchTab(tab) {
   if (navAdminBtn) navAdminBtn.classList.toggle('active', tab === 'admin');
   if (navSavedBtn) navSavedBtn.classList.toggle('active', tab === 'saved');
 
+  // Sync Mobile Bottom Navigation active states
+  const mobileNavEvents = document.getElementById('mobileNavEvents');
+  const mobileNavCalendar = document.getElementById('mobileNavCalendar');
+  const mobileNavSaved = document.getElementById('mobileNavSaved');
+  const mobileNavProfile = document.getElementById('mobileNavProfile');
+
+  if (mobileNavEvents) mobileNavEvents.classList.toggle('active', tab === 'events');
+  if (mobileNavCalendar) mobileNavCalendar.classList.toggle('active', tab === 'calendar');
+  if (mobileNavSaved) mobileNavSaved.classList.toggle('active', tab === 'saved');
+  if (mobileNavProfile) mobileNavProfile.classList.toggle('active', tab === 'handlers' || tab === 'admin');
+
   if (tab === 'calendar') {
     if (boardSection) boardSection.style.display = 'none';
     if (heroSection) heroSection.style.display = 'none';
@@ -933,7 +992,22 @@ function toggleBookmark(id) {
     showToast('Event removed from saved bookmarks.', 'info');
   }
   localStorage.setItem('isb_saved_events', JSON.stringify(state.savedEventIds));
+  updateSavedBadges();
   applyFilters();
+}
+
+function updateSavedBadges() {
+  const count = Array.isArray(state.savedEventIds) ? state.savedEventIds.length : 0;
+  const desktopBadge = document.getElementById('savedCountBadge');
+  const mobileBadge = document.getElementById('mobileSavedBadge');
+  if (desktopBadge) {
+    desktopBadge.textContent = count;
+    desktopBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+  if (mobileBadge) {
+    mobileBadge.textContent = count;
+    mobileBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
 }
 
 function updateDetailBookmarkBtn() {
@@ -1218,6 +1292,11 @@ function updateUserUI() {
       `;
       initIcons();
     }
+  }
+
+  const mobileNavProfileText = document.getElementById('mobileNavProfileText');
+  if (mobileNavProfileText) {
+    mobileNavProfileText.textContent = state.currentUser ? (state.currentUser.name?.split(' ')[0] || 'Account') : 'Sign In';
   }
 }
 
