@@ -1932,24 +1932,31 @@ button {
   gap: 0.75rem;
 }
 
+.footer-brand .brand-logo {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .footer-brand .brand-name {
   color: #ffffff;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
-  font-size: 1.35rem;
-}
-
-.footer-brand .brand-logo {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .footer-brand .brand-badge {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
   width: fit-content;
   align-self: flex-start;
+  padding: 1.5px 6px;
+  border-radius: 999px;
 }
 
 .footer-desc {
