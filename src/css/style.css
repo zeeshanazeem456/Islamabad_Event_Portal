@@ -1944,6 +1944,52 @@ button {
   margin: 0;
 }
 
+/* CREDITS CARD */
+.footer-credits-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.credit-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.credit-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--brand-emerald);
+  flex-shrink: 0;
+}
+
+.credit-lbl {
+  display: block;
+  font-size: 0.725rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.credit-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+}
+
+.credit-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .footer-hubs-wrap {
   display: flex;
   flex-direction: column;
@@ -2138,10 +2184,45 @@ button {
 .footer-copy {
   color: #64748b;
   font-size: 0.825rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
-.footer-copy strong {
+.footer-copy-text {
+  margin: 0;
   color: #94a3b8;
+}
+
+.footer-credits-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.credit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+
+.credit-pill i,
+.credit-pill svg {
+  width: 14px;
+  height: 14px;
+  color: var(--brand-emerald);
+}
+
+.credit-pill strong {
+  color: #ffffff;
+}
+
+.credit-dot {
+  color: #475569;
+  font-size: 0.8rem;
 }
 
 .btn-back-to-top {
