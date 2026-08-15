@@ -99,7 +99,7 @@ button {
 .brand-logo {
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #ffffff;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
@@ -107,9 +107,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
-  box-shadow: 0 2px 8px rgba(6, 78, 59, 0.25);
-  letter-spacing: 0.02em;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
   flex-shrink: 0;
 }
 
@@ -117,12 +116,12 @@ button {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 1px;
 }
 
 .brand-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
