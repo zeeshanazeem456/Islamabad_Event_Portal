@@ -1506,42 +1506,45 @@ button {
 /* DONATION FAB */
 .donation-fab {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1.75rem;
+  left: 1.75rem;
   background: var(--accent-gold);
   color: #fff;
   border: none;
   border-radius: var(--radius-full);
-  padding: 0.8rem 1.5rem;
+  padding: 0.75rem 1.35rem;
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35);
   cursor: pointer;
-  z-index: 9999;
+  z-index: 999;
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .donation-fab:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(217, 119, 6, 0.5);
+  box-shadow: 0 8px 25px rgba(217, 119, 6, 0.45);
   background: #b45309;
 }
 
 .toast-container {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 300;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  max-width: 90vw;
+  pointer-events: none;
 }
 
 .toast {
+  pointer-events: auto;
   background: #0f172a;
   color: #ffffff;
   padding: 0.85rem 1.25rem;
