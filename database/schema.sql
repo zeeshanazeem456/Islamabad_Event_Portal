@@ -76,31 +76,28 @@ CREATE POLICY "Events Insert Policy" ON public.events
   FOR INSERT
   WITH CHECK (true);
 
--- Only event owners (matching user_id) or system admins can update events
+-- Only event owners (matching user_id email / organizer_email) or system admins (app_metadata only) can update events
 CREATE POLICY "Events Update Policy" ON public.events
   FOR UPDATE
   TO authenticated
   USING (
-    auth.uid()::text = user_id 
+    (auth.jwt() ->> 'email') = user_id 
     OR (auth.jwt() ->> 'email') = organizer_email
-    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
     OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   )
   WITH CHECK (
-    auth.uid()::text = user_id 
+    (auth.jwt() ->> 'email') = user_id 
     OR (auth.jwt() ->> 'email') = organizer_email
-    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
     OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 
--- Only event owners or system admins can delete events
+-- Only event owners or system admins (app_metadata only) can delete events
 CREATE POLICY "Events Delete Policy" ON public.events
   FOR DELETE
   TO authenticated
   USING (
-    auth.uid()::text = user_id 
+    (auth.jwt() ->> 'email') = user_id 
     OR (auth.jwt() ->> 'email') = organizer_email
-    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
     OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 
@@ -109,11 +106,10 @@ CREATE POLICY "Subscribers Insert Policy" ON public.event_subscribers
   FOR INSERT
   WITH CHECK (true);
 
--- Only authenticated users or admins can read subscriber lists
+-- Only admins (app_metadata only) can read subscriber lists
 CREATE POLICY "Subscribers Read Policy" ON public.event_subscribers
   FOR SELECT
   TO authenticated
   USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
-    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );

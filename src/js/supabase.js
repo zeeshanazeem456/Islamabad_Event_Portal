@@ -94,7 +94,7 @@ class SupabaseService {
       try {
         const { data: { user }, error } = await this.client.auth.getUser();
         if (!error && user) {
-          const role = user.app_metadata?.role || user.user_metadata?.role || 'manager';
+          const role = user.app_metadata?.role === 'admin' ? 'admin' : 'manager';
           return {
             id: user.id,
             email: user.email,

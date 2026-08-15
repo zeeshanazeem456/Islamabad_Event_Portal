@@ -1056,7 +1056,7 @@ async function handleAuthSubmit(e) {
       return;
     }
     showToast(`Account registered in Supabase Auth! Welcome, ${name}.`, 'success');
-    const role = res.data?.app_metadata?.role || res.data?.user_metadata?.role || 'manager';
+    const role = res.data?.app_metadata?.role === 'admin' ? 'admin' : 'manager';
     state.currentUser = {
       id: res.data?.id,
       email,
@@ -1071,7 +1071,7 @@ async function handleAuthSubmit(e) {
     }
     showToast(`Signed in! Welcome back, ${name}.`, 'success');
     const user = res.data;
-    const role = user?.app_metadata?.role || user?.user_metadata?.role || 'manager';
+    const role = user?.app_metadata?.role === 'admin' ? 'admin' : 'manager';
     const fullName = user?.user_metadata?.full_name || name;
     state.currentUser = {
       id: user?.id,
