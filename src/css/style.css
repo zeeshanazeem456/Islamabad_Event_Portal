@@ -99,7 +99,7 @@ button {
 .brand-logo {
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
   color: #ffffff;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
@@ -107,19 +107,22 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  font-size: 0.95rem;
+  box-shadow: 0 2px 8px rgba(6, 78, 59, 0.25);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
 }
 
 .brand-text-wrap {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .brand-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
@@ -127,13 +130,19 @@ button {
 }
 
 .brand-badge {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: var(--brand-emerald-dark);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  width: fit-content;
+  align-self: flex-start;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .pulse-dot {
@@ -1931,10 +1940,17 @@ button {
   font-size: 1.35rem;
 }
 
+.footer-brand .brand-logo {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
 .footer-brand .brand-badge {
   background: rgba(16, 185, 129, 0.15);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.3);
+  width: fit-content;
+  align-self: flex-start;
 }
 
 .footer-desc {
