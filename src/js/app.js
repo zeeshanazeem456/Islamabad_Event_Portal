@@ -668,8 +668,24 @@ function setupEventListeners() {
     });
   }
 
-  // Auth Buttons
-  if (elements.openAuthBtn) elements.openAuthBtn.addEventListener('click', () => openModal(elements.authModal));
+  // Auth Buttons & Delegation
+  if (elements.userAuthSection) {
+    elements.userAuthSection.addEventListener('click', (e) => {
+      const logoutBtn = e.target.closest('#logoutBtn') || e.target.closest('.btn-logout-icon');
+      if (logoutBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleLogout();
+        return;
+      }
+      const openBtn = e.target.closest('#openAuthBtn');
+      if (openBtn) {
+        e.preventDefault();
+        openModal(elements.authModal);
+        return;
+      }
+    });
+  }
   if (elements.closeAuthModalBtn) elements.closeAuthModalBtn.addEventListener('click', () => closeModal(elements.authModal));
   if (elements.tabSignin) elements.tabSignin.addEventListener('click', () => setAuthTab('signin'));
   if (elements.tabSignup) elements.tabSignup.addEventListener('click', () => setAuthTab('signup'));
@@ -1090,6 +1106,19 @@ async function handleAuthSubmit(e) {
   }
 }
 
+async function handleLogout() {
+  state.currentUser = null;
+  localStorage.removeItem('isb_current_user');
+  updateUserUI();
+  showToast('Logged out successfully.', 'info');
+  switchTab('events');
+  try {
+    await supabaseService.signOutUser();
+  } catch (err) {
+    console.warn("Background signOut err:", err);
+  }
+}
+
 function updateUserUI() {
   const navAdminBtn = elements.navAdminBtn || document.getElementById('navAdminBtn');
   const navHandlersBtn = elements.navHandlersBtn || document.getElementById('navHandlersBtn');
@@ -1119,17 +1148,6 @@ function updateUserUI() {
         </div>
       `;
       initIcons();
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-          await supabaseService.signOutUser();
-          state.currentUser = null;
-          localStorage.removeItem('isb_current_user');
-          updateUserUI();
-          showToast('Logged out successfully.', 'info');
-          switchTab('events');
-        });
-      }
     }
   } else {
     if (navAdminBtn) navAdminBtn.style.display = 'none';
@@ -1142,8 +1160,6 @@ function updateUserUI() {
         </button>
       `;
       initIcons();
-      const btn = document.getElementById('openAuthBtn');
-      if (btn) btn.addEventListener('click', () => openModal(elements.authModal));
     }
   }
 }

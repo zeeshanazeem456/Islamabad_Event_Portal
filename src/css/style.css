@@ -296,9 +296,11 @@ button {
   cursor: pointer;
 }
 
-.btn-logout-icon svg {
+.btn-logout-icon svg,
+.btn-logout-icon i {
   width: 15px;
   height: 15px;
+  pointer-events: none;
 }
 
 .btn-logout-icon:hover {
