@@ -133,12 +133,9 @@ const elements = {
   
   // Image Modes
   modeUploadBtn: document.getElementById('modeUploadBtn'),
-  modePresetsBtn: document.getElementById('modePresetsBtn'),
   modeUrlBtn: document.getElementById('modeUrlBtn'),
   uploadGroup: document.getElementById('uploadGroup'),
-  presetsGroup: document.getElementById('presetsGroup'),
   customUrlGroup: document.getElementById('customUrlGroup'),
-  postBannerSelect: document.getElementById('postBannerSelect'),
   dropzoneBox: document.getElementById('dropzoneBox'),
   postImageFile: document.getElementById('postImageFile'),
   imagePreviewContainer: document.getElementById('imagePreviewContainer'),
@@ -464,7 +461,6 @@ function formatDate(dateStr) {
 // IMAGE UPLOAD HANDLERS
 function setupImageUploadEvents() {
   if (elements.modeUploadBtn) elements.modeUploadBtn.addEventListener('click', () => setImageMode('upload'));
-  if (elements.modePresetsBtn) elements.modePresetsBtn.addEventListener('click', () => setImageMode('presets'));
   if (elements.modeUrlBtn) elements.modeUrlBtn.addEventListener('click', () => setImageMode('url'));
 
   if (elements.dropzoneBox && elements.postImageFile) {
@@ -506,11 +502,9 @@ function setupImageUploadEvents() {
 function setImageMode(mode) {
   state.bannerMode = mode;
   if (elements.modeUploadBtn) elements.modeUploadBtn.classList.toggle('active', mode === 'upload');
-  if (elements.modePresetsBtn) elements.modePresetsBtn.classList.toggle('active', mode === 'presets');
   if (elements.modeUrlBtn) elements.modeUrlBtn.classList.toggle('active', mode === 'url');
 
   if (elements.uploadGroup) elements.uploadGroup.style.display = mode === 'upload' ? 'block' : 'none';
-  if (elements.presetsGroup) elements.presetsGroup.style.display = mode === 'presets' ? 'block' : 'none';
   if (elements.customUrlGroup) elements.customUrlGroup.style.display = mode === 'url' ? 'block' : 'none';
 }
 
@@ -1042,14 +1036,11 @@ function openEditModal(id) {
     if (elements.imagePreviewContainer) elements.imagePreviewContainer.style.display = 'block';
     if (elements.dropzoneBox) elements.dropzoneBox.style.display = 'none';
     setImageMode('upload');
-  } else if (evt.banner_url && evt.banner_url.startsWith('assets/')) {
-    if (elements.postBannerSelect) elements.postBannerSelect.value = evt.banner_url;
-    setImageMode('presets');
-  } else if (evt.banner_url && evt.banner_url.startsWith('http')) {
+  } else if (evt.banner_url && (evt.banner_url.startsWith('http') || evt.banner_url.startsWith('assets/'))) {
     if (elements.postCustomBanner) elements.postCustomBanner.value = evt.banner_url;
     setImageMode('url');
   } else {
-    setImageMode('presets');
+    setImageMode('upload');
   }
 
   openModal(elements.postEventModal);
@@ -1062,10 +1053,8 @@ async function handlePostSubmit(e) {
 
   if (state.bannerMode === 'upload' && state.uploadedBannerData) {
     banner = state.uploadedBannerData;
-  } else if (state.bannerMode === 'presets' && elements.postBannerSelect) {
-    banner = elements.postBannerSelect.value || 'assets/city-event-board.png';
-  } else if (state.bannerMode === 'url' && elements.postCustomBanner) {
-    banner = elements.postCustomBanner.value.trim() || 'assets/city-event-board.png';
+  } else if (state.bannerMode === 'url' && elements.postCustomBanner && elements.postCustomBanner.value.trim()) {
+    banner = elements.postCustomBanner.value.trim();
   }
 
   let selectedCategory = elements.postCategory ? elements.postCategory.value : 'Hackathon';
