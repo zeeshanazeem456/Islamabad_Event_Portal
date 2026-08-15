@@ -4,8 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Islamabad Event Portal | Coding Competitions, Hackathons & Bootcamps</title>
-  <meta name="description" content="Discover tech events in Islamabad including Hackathons, Coding Competitions, Bootcamps, and Workshops. Post events as an Event Manager using Supabase backend.">
-  
+  <meta name="description" content="Discover premier tech events in Islamabad including Hackathons, Coding Competitions, Bootcamps, and Workshops. Post events as an Event Manager using Supabase backend.">
+  <meta name="keywords" content="Islamabad Tech Events, Hackathons Islamabad, Coding Competitions Pakistan, FAST NUCES, NUST Hackathon, Developer Workshops">
+  <meta name="author" content="Islamabad Tech Community">
+  <meta name="theme-color" content="#064e3b">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Islamabad Event Portal | Competitions, Hackathons & Bootcamps">
+  <meta property="og:description" content="Your central gateway for Islamabad tech opportunities, hackathons, coding rounds, and bootcamps.">
+  <meta property="og:image" content="https://isbevents.pk/assets/city-event-board.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Islamabad Event Portal | Competitions, Hackathons & Bootcamps">
+  <meta name="twitter:description" content="Your central gateway for Islamabad tech opportunities, hackathons, coding rounds, and bootcamps.">
+  <meta name="twitter:image" content="https://isbevents.pk/assets/city-event-board.png">
+
+  <link rel="icon" type="image/png" href="assets/event-ai-hackathon.png">
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="./src/css/style.css?v=13">
+  <link rel="stylesheet" href="./src/css/style.css?v=14">
 </head>
 <body>
 
@@ -83,12 +100,12 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat-pill">
-          <span class="stat-num">PKR 850K+</span>
+          <span class="stat-num" id="statTotalPrize">PKR 850K+</span>
           <span class="stat-label">Prize Pools</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-pill">
-          <span class="stat-num">12+</span>
+          <span class="stat-num" id="statTotalHubs">12+</span>
           <span class="stat-label">Islamabad Hubs</span>
         </div>
       </div>
@@ -248,44 +265,56 @@
       </div>
 
       <!-- ADMIN METRICS -->
-      <div class="admin-metrics-grid">
-        <div class="admin-metric-card">
-          <div class="metric-icon-box"><i data-lucide="calendar"></i></div>
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <div class="stat-icon-wrap icon-purple"><i data-lucide="calendar"></i></div>
           <div>
-            <span class="metric-label">Total Posted Events</span>
-            <span class="metric-val" id="adminTotalEvents">0</span>
+            <span class="admin-stat-val" id="adminTotalEvents">0</span>
+            <span class="admin-stat-lbl">Total Posted Events</span>
           </div>
         </div>
-        <div class="admin-metric-card">
-          <div class="metric-icon-box official"><i data-lucide="award"></i></div>
+        <div class="admin-stat-card">
+          <div class="stat-icon-wrap icon-emerald"><i data-lucide="award"></i></div>
           <div>
-            <span class="metric-label">Official Events</span>
-            <span class="metric-val" id="adminOfficialCount">0</span>
+            <span class="admin-stat-val" id="adminOfficialCount">0</span>
+            <span class="admin-stat-lbl">Official Events</span>
           </div>
         </div>
-        <div class="admin-metric-card">
-          <div class="metric-icon-box users"><i data-lucide="users"></i></div>
+        <div class="admin-stat-card">
+          <div class="stat-icon-wrap icon-amber"><i data-lucide="users"></i></div>
           <div>
-            <span class="metric-label">Active Organizers</span>
-            <span class="metric-val" id="adminOrganizersCount">0</span>
+            <span class="admin-stat-val" id="adminOrganizersCount">0</span>
+            <span class="admin-stat-lbl">Active Organizers</span>
+          </div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="stat-icon-wrap icon-blue"><i data-lucide="trophy"></i></div>
+          <div>
+            <span class="admin-stat-val" id="adminTotalPrizeVal">PKR 0</span>
+            <span class="admin-stat-lbl">Total Prize Pools</span>
           </div>
         </div>
       </div>
 
       <!-- ADMIN EVENTS MANAGEMENT TABLE -->
       <div class="admin-table-card">
-        <div class="table-header">
-          <h3>Manage Published Events</h3>
-          <span class="table-sub">Review, toggle official status, or remove postings across Islamabad.</span>
+        <div class="admin-table-header">
+          <div>
+            <h3>Manage Published Events</h3>
+            <span class="table-sub">Review, toggle official status, or remove postings across Islamabad.</span>
+          </div>
+          <div class="admin-search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="adminSearchInput" placeholder="Search events, sectors, categories...">
+          </div>
         </div>
-        <div class="table-responsive">
+        <div class="admin-table-responsive">
           <table class="admin-table">
             <thead>
               <tr>
                 <th>Event Title</th>
                 <th>Category</th>
                 <th>Organizer</th>
-                <th>Sector</th>
                 <th>Start Date</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -578,21 +607,8 @@
         </div>
       </form>
 
-      <div class="auth-divider">
-        <span>OR QUICK DEMO LOGIN</span>
-      </div>
-
-      <div class="demo-buttons-grid">
-        <button class="btn-demo-login" id="demoLoginBtn">
-          <i data-lucide="zap"></i> Instant Demo Manager
-        </button>
-        <button class="btn-demo-admin" id="demoAdminBtn">
-          <i data-lucide="shield"></i> Instant Demo Admin
-        </button>
-      </div>
-
       <p class="auth-footer-note">
-        Guests do not need to sign in to browse, filter, or bookmark events.
+        Sign in to post, edit, and manage your events. Guests can browse, filter, and bookmark events without signing in.
       </p>
     </div>
   </div>

@@ -76,6 +76,39 @@ class SupabaseService {
     return { success: true, data: { email } };
   }
 
+  async signOutUser() {
+    this.initClient();
+    if (this.isLiveConnected()) {
+      try {
+        await this.client.auth.signOut();
+      } catch (err) {
+        console.warn("SignOut exception:", err);
+      }
+    }
+    return { success: true };
+  }
+
+  async getCurrentUser() {
+    this.initClient();
+    if (this.isLiveConnected()) {
+      try {
+        const { data: { user }, error } = await this.client.auth.getUser();
+        if (!error && user) {
+          const role = user.app_metadata?.role || user.user_metadata?.role || 'manager';
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            role: role
+          };
+        }
+      } catch (err) {
+        console.warn("getUser exception:", err);
+      }
+    }
+    return null;
+  }
+
   // --- DATA ACCESS OPERATIONS ---
   async fetchEvents() {
     this.initClient();

@@ -1,6 +1,6 @@
 -- =========================================================
--- ISLAMABAD TECH EVENT DASHBOARD - SUPABASE SQL SCHEMA
--- Execute this script in your Supabase SQL Editor to grant permissions
+-- ISLAMABAD TECH EVENT PORTAL - PRODUCTION SUPABASE SQL SCHEMA
+-- Execute this script in your Supabase SQL Editor
 -- =========================================================
 
 -- 1. Create Events Table
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   city TEXT NOT NULL DEFAULT 'Islamabad',
   organizer_name TEXT NOT NULL,
   organizer_email TEXT,
-  is_official BOOLEAN DEFAULT true,
+  is_official BOOLEAN DEFAULT false,
   start_date DATE NOT NULL,
   end_date DATE,
   deadline DATE NOT NULL,
@@ -40,21 +40,80 @@ CREATE TABLE IF NOT EXISTS public.event_subscribers (
 );
 
 -- 3. Grant Table Privileges to Anon & Authenticated API Roles
-GRANT ALL ON TABLE public.events TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.event_subscribers TO anon, authenticated, service_role;
+GRANT SELECT, INSERT ON TABLE public.events TO anon;
+GRANT ALL ON TABLE public.events TO authenticated;
+GRANT ALL ON TABLE public.events TO service_role;
 
--- 4. Enable Row Level Security & Public Access Policies
+GRANT INSERT ON TABLE public.event_subscribers TO anon;
+GRANT ALL ON TABLE public.event_subscribers TO authenticated;
+GRANT ALL ON TABLE public.event_subscribers TO service_role;
+
+-- 4. Enable Row Level Security (RLS)
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_subscribers ENABLE ROW LEVEL SECURITY;
 
+-- Clean up existing policies
 DROP POLICY IF EXISTS "Public Read Access for Events" ON public.events;
 DROP POLICY IF EXISTS "Public Insert Access for Events" ON public.events;
 DROP POLICY IF EXISTS "Public Update Access for Events" ON public.events;
 DROP POLICY IF EXISTS "Public Delete Access for Events" ON public.events;
 DROP POLICY IF EXISTS "Public Subscribe Access" ON public.event_subscribers;
+DROP POLICY IF EXISTS "Events Read Policy" ON public.events;
+DROP POLICY IF EXISTS "Events Insert Policy" ON public.events;
+DROP POLICY IF EXISTS "Events Update Policy" ON public.events;
+DROP POLICY IF EXISTS "Events Delete Policy" ON public.events;
+DROP POLICY IF EXISTS "Subscribers Insert Policy" ON public.event_subscribers;
+DROP POLICY IF EXISTS "Subscribers Read Policy" ON public.event_subscribers;
 
-CREATE POLICY "Public Read Access for Events" ON public.events FOR SELECT USING (true);
-CREATE POLICY "Public Insert Access for Events" ON public.events FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Access for Events" ON public.events FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Access for Events" ON public.events FOR DELETE USING (true);
-CREATE POLICY "Public Subscribe Access" ON public.event_subscribers FOR INSERT WITH CHECK (true);
+-- 5. Secure Production Policies
+-- Anyone can view approved events
+CREATE POLICY "Events Read Policy" ON public.events
+  FOR SELECT
+  USING (true);
+
+-- Authenticated organizers or public submissions can insert events
+CREATE POLICY "Events Insert Policy" ON public.events
+  FOR INSERT
+  WITH CHECK (true);
+
+-- Only event owners (matching user_id) or system admins can update events
+CREATE POLICY "Events Update Policy" ON public.events
+  FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid()::text = user_id 
+    OR (auth.jwt() ->> 'email') = organizer_email
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  )
+  WITH CHECK (
+    auth.uid()::text = user_id 
+    OR (auth.jwt() ->> 'email') = organizer_email
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
+
+-- Only event owners or system admins can delete events
+CREATE POLICY "Events Delete Policy" ON public.events
+  FOR DELETE
+  TO authenticated
+  USING (
+    auth.uid()::text = user_id 
+    OR (auth.jwt() ->> 'email') = organizer_email
+    OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
+
+-- Anyone can subscribe to an event for notifications
+CREATE POLICY "Subscribers Insert Policy" ON public.event_subscribers
+  FOR INSERT
+  WITH CHECK (true);
+
+-- Only authenticated users or admins can read subscriber lists
+CREATE POLICY "Subscribers Read Policy" ON public.event_subscribers
+  FOR SELECT
+  TO authenticated
+  USING (
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );

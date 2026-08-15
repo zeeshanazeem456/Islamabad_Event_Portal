@@ -4,7 +4,6 @@
 // =========================================================
 
 import { supabaseService } from './supabase.js';
-import { ADMIN_CREDENTIALS } from './config.js?v=2';
 
 // STATE STORAGE
 const state = {
@@ -70,7 +69,6 @@ const elements = {
   calendarDaysGrid: document.getElementById('calendarDaysGrid'),
   adminEventsTableBody: document.getElementById('adminEventsTableBody'),
   adminSearchInput: document.getElementById('adminSearchInput'),
-  demoAdminBtn: document.getElementById('demoAdminBtn'),
   savedCountBadge: document.getElementById('savedCountBadge'),
   userAuthSection: document.getElementById('userAuthSection'),
   openAuthBtn: document.getElementById('openAuthBtn'),
@@ -135,9 +133,12 @@ const elements = {
   
   // Image Modes
   modeUploadBtn: document.getElementById('modeUploadBtn'),
+  modePresetsBtn: document.getElementById('modePresetsBtn'),
   modeUrlBtn: document.getElementById('modeUrlBtn'),
   uploadGroup: document.getElementById('uploadGroup'),
+  presetsGroup: document.getElementById('presetsGroup'),
   customUrlGroup: document.getElementById('customUrlGroup'),
+  postBannerSelect: document.getElementById('postBannerSelect'),
   dropzoneBox: document.getElementById('dropzoneBox'),
   postImageFile: document.getElementById('postImageFile'),
   imagePreviewContainer: document.getElementById('imagePreviewContainer'),
@@ -165,11 +166,23 @@ const elements = {
 };
 
 // INITIALIZATION
-function initApp() {
+async function initApp() {
   initIcons();
   setupEventListeners();
   setupImageUploadEvents();
   setupCalendarControls();
+  
+  // Sync live Supabase Auth session if available
+  try {
+    const liveUser = await supabaseService.getCurrentUser();
+    if (liveUser) {
+      state.currentUser = liveUser;
+      localStorage.setItem('isb_current_user', JSON.stringify(liveUser));
+    }
+  } catch (err) {
+    console.warn("Session check exception:", err);
+  }
+  
   updateUserUI();
   
   loadEvents().catch(err => {
@@ -451,6 +464,7 @@ function formatDate(dateStr) {
 // IMAGE UPLOAD HANDLERS
 function setupImageUploadEvents() {
   if (elements.modeUploadBtn) elements.modeUploadBtn.addEventListener('click', () => setImageMode('upload'));
+  if (elements.modePresetsBtn) elements.modePresetsBtn.addEventListener('click', () => setImageMode('presets'));
   if (elements.modeUrlBtn) elements.modeUrlBtn.addEventListener('click', () => setImageMode('url'));
 
   if (elements.dropzoneBox && elements.postImageFile) {
@@ -492,9 +506,11 @@ function setupImageUploadEvents() {
 function setImageMode(mode) {
   state.bannerMode = mode;
   if (elements.modeUploadBtn) elements.modeUploadBtn.classList.toggle('active', mode === 'upload');
+  if (elements.modePresetsBtn) elements.modePresetsBtn.classList.toggle('active', mode === 'presets');
   if (elements.modeUrlBtn) elements.modeUrlBtn.classList.toggle('active', mode === 'url');
 
   if (elements.uploadGroup) elements.uploadGroup.style.display = mode === 'upload' ? 'block' : 'none';
+  if (elements.presetsGroup) elements.presetsGroup.style.display = mode === 'presets' ? 'block' : 'none';
   if (elements.customUrlGroup) elements.customUrlGroup.style.display = mode === 'url' ? 'block' : 'none';
 }
 
@@ -534,8 +550,6 @@ function setupEventListeners() {
   if (navHandlersBtn) navHandlersBtn.addEventListener('click', () => switchTab('handlers'));
   if (navAdminBtn) navAdminBtn.addEventListener('click', () => switchTab('admin'));
   if (navSavedBtn) navSavedBtn.addEventListener('click', () => switchTab('saved'));
-
-  if (elements.demoAdminBtn) elements.demoAdminBtn.addEventListener('click', handleDemoAdminLogin);
 
   // Admin Search
   const adminSearch = elements.adminSearchInput || document.getElementById('adminSearchInput');
@@ -673,8 +687,7 @@ function setupEventListeners() {
   }
   if (elements.detailShareBtn) {
     elements.detailShareBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(window.location.href);
-      showToast('Event link copied to clipboard!', 'success');
+      copyTextToClipboard(window.location.href, 'Event link copied to clipboard!');
     });
   }
   if (elements.rsvpForm) {
@@ -703,8 +716,6 @@ function setupEventListeners() {
       const supportModal = document.getElementById('supportModal');
       if (supportModal) {
         openModal(supportModal);
-        
-        // Re-initialize Lucide icons just in case they were added dynamically
         if (window.lucide) window.lucide.createIcons();
       }
     });
@@ -720,16 +731,42 @@ function setupEventListeners() {
   if (copyEasypaisaBtn) {
     copyEasypaisaBtn.addEventListener('click', () => {
       const num = '03165545022';
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(num).then(() => {
-          showToast(`Easypaisa number (${num}) copied to clipboard! Thank you ☕`, 'success');
-        }).catch(() => {
-          showToast(`Please manually copy the number: ${num}`, 'info');
-        });
-      } else {
-        showToast(`Please manually copy the number: ${num}`, 'info');
-      }
+      copyTextToClipboard(num, `Easypaisa number (${num}) copied to clipboard! Thank you ☕`);
     });
+  }
+}
+
+function copyTextToClipboard(text, successMsg) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(successMsg, 'success');
+    }).catch(() => {
+      fallbackCopyText(text, successMsg);
+    });
+  } else {
+    fallbackCopyText(text, successMsg);
+  }
+}
+
+function fallbackCopyText(text, successMsg) {
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    if (successful) {
+      showToast(successMsg, 'success');
+    } else {
+      showToast(`Copy: ${text}`, 'info');
+    }
+  } catch (err) {
+    showToast(`Copy: ${text}`, 'info');
   }
 }
 
@@ -921,11 +958,14 @@ function openEditModal(id) {
     if (elements.imagePreviewContainer) elements.imagePreviewContainer.style.display = 'block';
     if (elements.dropzoneBox) elements.dropzoneBox.style.display = 'none';
     setImageMode('upload');
+  } else if (evt.banner_url && evt.banner_url.startsWith('assets/')) {
+    if (elements.postBannerSelect) elements.postBannerSelect.value = evt.banner_url;
+    setImageMode('presets');
   } else if (evt.banner_url && evt.banner_url.startsWith('http')) {
     if (elements.postCustomBanner) elements.postCustomBanner.value = evt.banner_url;
     setImageMode('url');
   } else {
-    setImageMode('upload');
+    setImageMode('presets');
   }
 
   openModal(elements.postEventModal);
@@ -938,6 +978,8 @@ async function handlePostSubmit(e) {
 
   if (state.bannerMode === 'upload' && state.uploadedBannerData) {
     banner = state.uploadedBannerData;
+  } else if (state.bannerMode === 'presets' && elements.postBannerSelect) {
+    banner = elements.postBannerSelect.value || 'assets/city-event-board.png';
   } else if (state.bannerMode === 'url' && elements.postCustomBanner) {
     banner = elements.postCustomBanner.value.trim() || 'assets/city-event-board.png';
   }
@@ -1007,8 +1049,6 @@ async function handleAuthSubmit(e) {
   const name = (elements.authName ? elements.authName.value.trim() : '') || email.split('@')[0];
   const isSignup = elements.tabSignup && elements.tabSignup.classList.contains('active');
 
-  const isAdmin = email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() || email.toLowerCase().includes('admin');
-
   if (isSignup) {
     const res = await supabaseService.signUpUser(email, password, name);
     if (!res.success) {
@@ -1016,6 +1056,13 @@ async function handleAuthSubmit(e) {
       return;
     }
     showToast(`Account registered in Supabase Auth! Welcome, ${name}.`, 'success');
+    const role = res.data?.app_metadata?.role || res.data?.user_metadata?.role || 'manager';
+    state.currentUser = {
+      id: res.data?.id,
+      email,
+      name,
+      role
+    };
   } else {
     const res = await supabaseService.signInUser(email, password);
     if (!res.success) {
@@ -1023,34 +1070,24 @@ async function handleAuthSubmit(e) {
       return;
     }
     showToast(`Signed in! Welcome back, ${name}.`, 'success');
+    const user = res.data;
+    const role = user?.app_metadata?.role || user?.user_metadata?.role || 'manager';
+    const fullName = user?.user_metadata?.full_name || name;
+    state.currentUser = {
+      id: user?.id,
+      email,
+      name: fullName,
+      role
+    };
   }
-
-  state.currentUser = {
-    email,
-    name: isAdmin ? ADMIN_CREDENTIALS.name : name,
-    role: isAdmin ? 'admin' : 'manager'
-  };
 
   localStorage.setItem('isb_current_user', JSON.stringify(state.currentUser));
   updateUserUI();
   closeModal(elements.authModal);
 
-  if (isAdmin) {
+  if (state.currentUser.role === 'admin') {
     switchTab('admin');
   }
-}
-
-function handleDemoAdminLogin() {
-  state.currentUser = {
-    email: ADMIN_CREDENTIALS.email,
-    name: ADMIN_CREDENTIALS.name,
-    role: 'admin'
-  };
-  localStorage.setItem('isb_current_user', JSON.stringify(state.currentUser));
-  updateUserUI();
-  closeModal(elements.authModal);
-  showToast('Logged in as System Administrator!', 'success');
-  switchTab('admin');
 }
 
 function updateUserUI() {
@@ -1084,7 +1121,8 @@ function updateUserUI() {
       initIcons();
       const logoutBtn = document.getElementById('logoutBtn');
       if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
+        logoutBtn.addEventListener('click', async () => {
+          await supabaseService.signOutUser();
           state.currentUser = null;
           localStorage.removeItem('isb_current_user');
           updateUserUI();
