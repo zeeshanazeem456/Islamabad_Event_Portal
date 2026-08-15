@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS public.events (
   banner_url TEXT,
   registration_url TEXT NOT NULL,
   user_id TEXT,
-  views_count INT DEFAULT 0
+  views_count INT DEFAULT 0,
+  status TEXT DEFAULT 'approved',
+  is_featured BOOLEAN DEFAULT false
 );
 
 -- 2. Create Event Subscribers Table

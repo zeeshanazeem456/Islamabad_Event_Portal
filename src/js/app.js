@@ -4,6 +4,7 @@
 // =========================================================
 
 import { supabaseService } from './supabase.js';
+import { ADMIN_CREDENTIALS } from './config.js?v=2';
 
 // STATE STORAGE
 const state = {
@@ -24,12 +25,52 @@ const state = {
   uploadedBannerData: ''
 };
 
+function parsePrizePool(prizeStr) {
+  if (!prizeStr || typeof prizeStr !== 'string') return 0;
+  const str = prizeStr.toLowerCase();
+  const match = str.match(/(\d[\d,.]*)\s*(k|m|lakh)?/i);
+  if (!match) return 0;
+
+  let val = parseFloat(match[1].replace(/,/g, ''));
+  if (isNaN(val)) return 0;
+
+  const multiplier = match[2] ? match[2].toLowerCase() : '';
+  if (multiplier === 'k') val *= 1000;
+  else if (multiplier === 'm') val *= 1000000;
+  else if (multiplier === 'lakh') val *= 100000;
+
+  return val;
+}
+
+function formatPrizeTotal(total) {
+  if (total >= 1000000) {
+    return `PKR ${(total / 1000000).toFixed(1).replace('.0', '')}M+`;
+  } else if (total >= 1000) {
+    return `PKR ${Math.round(total / 1000)}K+`;
+  } else if (total > 0) {
+    return `PKR ${total.toLocaleString()}`;
+  }
+  return 'PKR 0';
+}
+
 // DOM ELEMENTS CACHE
 const elements = {
   // Navigation & User
   navEventsBtn: document.getElementById('navEventsBtn'),
+  navCalendarBtn: document.getElementById('navCalendarBtn'),
   navHandlersBtn: document.getElementById('navHandlersBtn'),
+  navAdminBtn: document.getElementById('navAdminBtn'),
   navSavedBtn: document.getElementById('navSavedBtn'),
+  calendarSection: document.getElementById('calendarSection'),
+  adminSection: document.getElementById('adminSection'),
+  calPrevMonthBtn: document.getElementById('calPrevMonthBtn'),
+  calNextMonthBtn: document.getElementById('calNextMonthBtn'),
+  calTodayBtn: document.getElementById('calTodayBtn'),
+  calCurrentMonthLabel: document.getElementById('calCurrentMonthLabel'),
+  calendarDaysGrid: document.getElementById('calendarDaysGrid'),
+  adminEventsTableBody: document.getElementById('adminEventsTableBody'),
+  adminSearchInput: document.getElementById('adminSearchInput'),
+  demoAdminBtn: document.getElementById('demoAdminBtn'),
   savedCountBadge: document.getElementById('savedCountBadge'),
   userAuthSection: document.getElementById('userAuthSection'),
   openAuthBtn: document.getElementById('openAuthBtn'),
@@ -128,6 +169,7 @@ function initApp() {
   initIcons();
   setupEventListeners();
   setupImageUploadEvents();
+  setupCalendarControls();
   updateUserUI();
   
   loadEvents().catch(err => {
@@ -156,6 +198,7 @@ async function loadEvents() {
     state.allEvents = [];
   }
   applyFilters();
+  renderCalendar();
 }
 
 function applyFilters() {
@@ -234,10 +277,13 @@ function renderGrid() {
 
   state.filteredEvents.forEach(evt => {
     const isSaved = state.savedEventIds.includes(evt.id);
-    const isOwner = state.currentUser && (
-      evt.organizer_name.toLowerCase().includes(state.currentUser.name?.toLowerCase() || '') ||
+    const orgName = (evt.organizer_name || '').toLowerCase();
+    const currName = (state.currentUser?.name || '').toLowerCase();
+    const isAdmin = state.currentUser && state.currentUser.role === 'admin';
+    const isOwner = isAdmin || (state.currentUser && (
+      (currName && orgName.includes(currName)) ||
       evt.user_id === state.currentUser.email
-    );
+    ));
 
     const card = document.createElement('div');
     card.className = 'event-card';
@@ -272,7 +318,7 @@ function renderGrid() {
         </div>
 
         <div class="card-footer">
-          <span class="prize-pill">${evt.prize_pool || evt.fee || 'Free'}</span>
+          <span class="prize-pill">${formatDisplayPrize(evt.prize_pool || evt.fee)}</span>
           <div class="owner-controls">
             ${isOwner ? `
               <button class="btn-owner edit-btn" data-id="${evt.id}"><i data-lucide="edit-3"></i> Edit</button>
@@ -347,7 +393,53 @@ function addTag(label, onRemove) {
 }
 
 function updateStats() {
-  elements.statTotalEvents.textContent = `${state.allEvents.length}+`;
+  const statTotalEvents = document.getElementById('statTotalEvents');
+  const statTotalPrize = document.getElementById('statTotalPrize');
+  const statTotalHubs = document.getElementById('statTotalHubs');
+
+  const totalEvents = Array.isArray(state.allEvents) ? state.allEvents.length : 0;
+  if (statTotalEvents) {
+    statTotalEvents.textContent = `${totalEvents}+`;
+  }
+
+  let totalPrize = 0;
+  const hubs = new Set();
+
+  if (Array.isArray(state.allEvents)) {
+    state.allEvents.forEach(evt => {
+      if (!evt) return;
+
+      const pStr = evt.prize_pool || evt.fee || '';
+      if (pStr) {
+        totalPrize += parsePrizePool(pStr);
+      }
+      if (evt.sector && typeof evt.sector === 'string' && evt.sector.trim()) {
+        hubs.add(evt.sector.trim());
+      }
+      if (evt.organizer_name && typeof evt.organizer_name === 'string' && evt.organizer_name.trim()) {
+        hubs.add(evt.organizer_name.trim());
+      }
+    });
+  }
+
+  if (statTotalPrize) {
+    statTotalPrize.textContent = formatPrizeTotal(totalPrize);
+  }
+
+  if (statTotalHubs) {
+    const hubCount = hubs.size > 0 ? hubs.size : (totalEvents > 0 ? totalEvents : 1);
+    statTotalHubs.textContent = `${hubCount}+`;
+  }
+}
+
+function formatDisplayPrize(val) {
+  if (!val) return 'Free';
+  const strVal = String(val);
+  const numericVal = strVal.replace(/,/g, '');
+  if (/^\d+$/.test(numericVal)) {
+    return 'PKR ' + parseInt(numericVal, 10).toLocaleString();
+  }
+  return strVal;
 }
 
 function formatDate(dateStr) {
@@ -431,9 +523,45 @@ function setupEventListeners() {
   }
 
   // Nav Tabs
-  if (elements.navEventsBtn) elements.navEventsBtn.addEventListener('click', () => switchTab('events'));
-  if (elements.navHandlersBtn) elements.navHandlersBtn.addEventListener('click', () => switchTab('handlers'));
-  if (elements.navSavedBtn) elements.navSavedBtn.addEventListener('click', () => switchTab('saved'));
+  const navEventsBtn = elements.navEventsBtn || document.getElementById('navEventsBtn');
+  const navCalendarBtn = elements.navCalendarBtn || document.getElementById('navCalendarBtn');
+  const navHandlersBtn = elements.navHandlersBtn || document.getElementById('navHandlersBtn');
+  const navAdminBtn = elements.navAdminBtn || document.getElementById('navAdminBtn');
+  const navSavedBtn = elements.navSavedBtn || document.getElementById('navSavedBtn');
+
+  if (navEventsBtn) navEventsBtn.addEventListener('click', () => switchTab('events'));
+  if (navCalendarBtn) navCalendarBtn.addEventListener('click', () => switchTab('calendar'));
+  if (navHandlersBtn) navHandlersBtn.addEventListener('click', () => switchTab('handlers'));
+  if (navAdminBtn) navAdminBtn.addEventListener('click', () => switchTab('admin'));
+  if (navSavedBtn) navSavedBtn.addEventListener('click', () => switchTab('saved'));
+
+  if (elements.demoAdminBtn) elements.demoAdminBtn.addEventListener('click', handleDemoAdminLogin);
+
+  // Admin Search
+  const adminSearch = elements.adminSearchInput || document.getElementById('adminSearchInput');
+  if (adminSearch) adminSearch.addEventListener('input', renderAdminDashboard);
+
+  // Admin Table Delegation
+  const adminTable = document.getElementById('adminEventsTableBody');
+  if (adminTable) {
+    adminTable.addEventListener('click', (e) => {
+      const toggleBtn = e.target.closest('.toggle-official-btn');
+      if (toggleBtn) {
+        handleAdminToggleOfficial(toggleBtn.dataset.id);
+        return;
+      }
+      const editBtn = e.target.closest('.edit-btn');
+      if (editBtn) {
+        openEditModal(editBtn.dataset.id);
+        return;
+      }
+      const deleteBtn = e.target.closest('.delete-btn');
+      if (deleteBtn) {
+        handleDeleteEvent(deleteBtn.dataset.id);
+        return;
+      }
+    });
+  }
 
   // Search & Filters
   if (elements.searchInput) {
@@ -500,8 +628,7 @@ function setupEventListeners() {
 
       const deleteBtn = e.target.closest('.delete-btn');
       if (deleteBtn) {
-        const id = deleteBtn.dataset.id;
-        handleDeleteEvent(id);
+        handleDeleteEvent(deleteBtn.dataset.id);
         return;
       }
     });
@@ -568,15 +695,85 @@ function setupEventListeners() {
       if (e.target === modal) closeModal(modal);
     });
   });
+
+  // Donation FAB
+  const donationFab = document.getElementById('donationFab');
+  if (donationFab) {
+    donationFab.addEventListener('click', () => {
+      const supportModal = document.getElementById('supportModal');
+      if (supportModal) {
+        openModal(supportModal);
+        
+        // Re-initialize Lucide icons just in case they were added dynamically
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  // Support Modal logic
+  const closeSupportModalBtn = document.getElementById('closeSupportModalBtn');
+  if (closeSupportModalBtn) {
+    closeSupportModalBtn.addEventListener('click', () => closeModal(document.getElementById('supportModal')));
+  }
+
+  const copyEasypaisaBtn = document.getElementById('copyEasypaisaBtn');
+  if (copyEasypaisaBtn) {
+    copyEasypaisaBtn.addEventListener('click', () => {
+      const num = '03165545022';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(num).then(() => {
+          showToast(`Easypaisa number (${num}) copied to clipboard! Thank you ☕`, 'success');
+        }).catch(() => {
+          showToast(`Please manually copy the number: ${num}`, 'info');
+        });
+      } else {
+        showToast(`Please manually copy the number: ${num}`, 'info');
+      }
+    });
+  }
 }
 
 // TAB SWITCHING
 function switchTab(tab) {
   state.currentTab = tab;
 
-  if (elements.navEventsBtn) elements.navEventsBtn.classList.toggle('active', tab === 'events');
-  if (elements.navHandlersBtn) elements.navHandlersBtn.classList.toggle('active', tab === 'handlers');
-  if (elements.navSavedBtn) elements.navSavedBtn.classList.toggle('active', tab === 'saved');
+  const navEventsBtn = elements.navEventsBtn || document.getElementById('navEventsBtn');
+  const navCalendarBtn = elements.navCalendarBtn || document.getElementById('navCalendarBtn');
+  const navHandlersBtn = elements.navHandlersBtn || document.getElementById('navHandlersBtn');
+  const navAdminBtn = elements.navAdminBtn || document.getElementById('navAdminBtn');
+  const navSavedBtn = elements.navSavedBtn || document.getElementById('navSavedBtn');
+
+  const boardSection = document.getElementById('eventsBoardView') || document.querySelector('.board-section');
+  const heroSection = document.querySelector('.hero-section');
+  const calendarSection = document.getElementById('calendarView') || document.getElementById('calendarSection') || document.querySelector('.calendar-section');
+  const adminSection = document.getElementById('adminDashboardView') || document.getElementById('adminSection') || document.querySelector('.admin-section');
+
+  if (navEventsBtn) navEventsBtn.classList.toggle('active', tab === 'events');
+  if (navCalendarBtn) navCalendarBtn.classList.toggle('active', tab === 'calendar');
+  if (navHandlersBtn) navHandlersBtn.classList.toggle('active', tab === 'handlers');
+  if (navAdminBtn) navAdminBtn.classList.toggle('active', tab === 'admin');
+  if (navSavedBtn) navSavedBtn.classList.toggle('active', tab === 'saved');
+
+  if (tab === 'calendar') {
+    if (boardSection) boardSection.style.display = 'none';
+    if (heroSection) heroSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+    if (calendarSection) calendarSection.style.display = 'block';
+    renderCalendar();
+    return;
+  } else if (tab === 'admin') {
+    if (boardSection) boardSection.style.display = 'none';
+    if (heroSection) heroSection.style.display = 'none';
+    if (calendarSection) calendarSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'block';
+    renderAdminDashboard();
+    return;
+  } else {
+    if (boardSection) boardSection.style.display = 'block';
+    if (heroSection) heroSection.style.display = 'block';
+    if (calendarSection) calendarSection.style.display = 'none';
+    if (adminSection) adminSection.style.display = 'none';
+  }
 
   if (tab === 'events') {
     if (elements.boardTitleText) elements.boardTitleText.textContent = 'Find your next city event';
@@ -645,7 +842,7 @@ function openDetailModal(id) {
   if (elements.detailDates) elements.detailDates.textContent = formatDate(evt.start_date);
   if (elements.detailDeadline) elements.detailDeadline.textContent = formatDate(evt.deadline);
   if (elements.detailSector) elements.detailSector.textContent = `${evt.sector} (${evt.format})`;
-  if (elements.detailPrize) elements.detailPrize.textContent = evt.prize_pool || evt.fee || 'Free';
+  if (elements.detailPrize) elements.detailPrize.textContent = formatDisplayPrize(evt.prize_pool || evt.fee);
   if (elements.detailDescription) elements.detailDescription.textContent = evt.description;
 
   if (evt.agenda) {
@@ -713,7 +910,7 @@ function openEditModal(id) {
   if (elements.postOrganizer) elements.postOrganizer.value = evt.organizer_name;
   if (elements.postStartDate) elements.postStartDate.value = evt.start_date;
   if (elements.postDeadline) elements.postDeadline.value = evt.deadline;
-  if (elements.postPrize) elements.postPrize.value = evt.prize_pool || '';
+  if (elements.postPrize) elements.postPrize.value = formatDisplayPrize(evt.prize_pool || evt.fee);
   if (elements.postRegisterUrl) elements.postRegisterUrl.value = evt.registration_url || '';
   if (elements.postDescription) elements.postDescription.value = evt.description;
   if (elements.postAgenda) elements.postAgenda.value = evt.agenda || '';
@@ -751,6 +948,12 @@ async function handlePostSubmit(e) {
     selectedCategory = customCat || 'Other';
   }
 
+  let rawPrize = (elements.postPrize ? elements.postPrize.value.trim() : '') || 'Free';
+  const numericVal = rawPrize.replace(/,/g, '');
+  if (/^\d+$/.test(numericVal)) {
+    rawPrize = 'PKR ' + parseInt(numericVal, 10).toLocaleString();
+  }
+
   const formData = {
     title: elements.postTitle ? elements.postTitle.value.trim() : '',
     category: selectedCategory,
@@ -759,7 +962,7 @@ async function handlePostSubmit(e) {
     organizer_name: elements.postOrganizer ? elements.postOrganizer.value.trim() : 'Organizer',
     start_date: elements.postStartDate ? elements.postStartDate.value : '',
     deadline: elements.postDeadline ? elements.postDeadline.value : '',
-    prize_pool: (elements.postPrize ? elements.postPrize.value.trim() : '') || 'Free',
+    prize_pool: rawPrize,
     registration_url: elements.postRegisterUrl ? elements.postRegisterUrl.value.trim() : '#',
     banner_url: banner,
     description: elements.postDescription ? elements.postDescription.value.trim() : '',
@@ -804,6 +1007,8 @@ async function handleAuthSubmit(e) {
   const name = (elements.authName ? elements.authName.value.trim() : '') || email.split('@')[0];
   const isSignup = elements.tabSignup && elements.tabSignup.classList.contains('active');
 
+  const isAdmin = email.toLowerCase() === ADMIN_CREDENTIALS.email.toLowerCase() || email.toLowerCase().includes('admin');
+
   if (isSignup) {
     const res = await supabaseService.signUpUser(email, password, name);
     if (!res.success) {
@@ -817,49 +1022,305 @@ async function handleAuthSubmit(e) {
       showToast(`Sign In Error: ${res.error}`, 'warning');
       return;
     }
-    showToast(`Signed in via Supabase! Welcome back, ${name}.`, 'success');
+    showToast(`Signed in! Welcome back, ${name}.`, 'success');
   }
 
   state.currentUser = {
     email,
-    name,
-    role: 'manager'
+    name: isAdmin ? ADMIN_CREDENTIALS.name : name,
+    role: isAdmin ? 'admin' : 'manager'
   };
 
   localStorage.setItem('isb_current_user', JSON.stringify(state.currentUser));
   updateUserUI();
   closeModal(elements.authModal);
+
+  if (isAdmin) {
+    switchTab('admin');
+  }
+}
+
+function handleDemoAdminLogin() {
+  state.currentUser = {
+    email: ADMIN_CREDENTIALS.email,
+    name: ADMIN_CREDENTIALS.name,
+    role: 'admin'
+  };
+  localStorage.setItem('isb_current_user', JSON.stringify(state.currentUser));
+  updateUserUI();
+  closeModal(elements.authModal);
+  showToast('Logged in as System Administrator!', 'success');
+  switchTab('admin');
 }
 
 function updateUserUI() {
+  const navAdminBtn = elements.navAdminBtn || document.getElementById('navAdminBtn');
+  const navHandlersBtn = elements.navHandlersBtn || document.getElementById('navHandlersBtn');
+
   if (state.currentUser) {
+    if (navAdminBtn) {
+      navAdminBtn.style.display = state.currentUser.role === 'admin' ? 'inline-flex' : 'none';
+    }
+    if (navHandlersBtn) {
+      navHandlersBtn.style.display = 'inline-flex';
+    }
+
     if (elements.userAuthSection) {
+      const badgeRole = state.currentUser.role === 'admin' ? 'Admin' : 'Manager';
+      const initials = (state.currentUser.name || 'U').substring(0, 2).toUpperCase();
+
       elements.userAuthSection.innerHTML = `
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          <span style="font-size:0.85rem; font-weight:700; color:#111827;">${state.currentUser.name}</span>
-          <button id="logoutBtn" class="btn-secondary" style="padding:0.4rem 0.75rem; font-size:0.8rem;">Logout</button>
+        <div class="user-profile-badge">
+          <div class="user-avatar">${initials}</div>
+          <div class="user-info">
+            <span class="user-name">${state.currentUser.name}</span>
+            <span class="user-role-tag">${badgeRole}</span>
+          </div>
+          <button id="logoutBtn" class="btn-logout-icon" title="Log Out">
+            <i data-lucide="log-out"></i>
+          </button>
         </div>
       `;
+      initIcons();
       const logoutBtn = document.getElementById('logoutBtn');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
           state.currentUser = null;
           localStorage.removeItem('isb_current_user');
           updateUserUI();
-          showToast('Logged out.', 'info');
+          showToast('Logged out successfully.', 'info');
           switchTab('events');
         });
       }
     }
   } else {
+    if (navAdminBtn) navAdminBtn.style.display = 'none';
+    if (navHandlersBtn) navHandlersBtn.style.display = 'none';
+
     if (elements.userAuthSection) {
       elements.userAuthSection.innerHTML = `
-        <button class="btn-secondary" id="openAuthBtn">Sign in</button>
+        <button class="btn-secondary" id="openAuthBtn">
+          <i data-lucide="user"></i> Sign in
+        </button>
       `;
+      initIcons();
       const btn = document.getElementById('openAuthBtn');
       if (btn) btn.addEventListener('click', () => openModal(elements.authModal));
     }
   }
+}
+
+// CALENDAR ENGINE
+let currentCalendarDate = new Date(2026, 7, 1); // August 2026
+
+function setupCalendarControls() {
+  const calPrevMonthBtn = document.getElementById('calPrevMonthBtn');
+  const calNextMonthBtn = document.getElementById('calNextMonthBtn');
+
+  if (calPrevMonthBtn) {
+    calPrevMonthBtn.addEventListener('click', () => {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+      renderCalendar();
+    });
+  }
+
+  if (calNextMonthBtn) {
+    calNextMonthBtn.addEventListener('click', () => {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+      renderCalendar();
+    });
+  }
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarDaysGrid');
+  const monthTitle = document.getElementById('calMonthTitle');
+  if (!grid) return;
+
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  if (monthTitle) {
+    monthTitle.textContent = `${monthNames[month]} ${year}`;
+  }
+
+  grid.innerHTML = '';
+
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthTotalDays = new Date(year, month, 0).getDate();
+
+  // 1. Render previous month padding days
+  for (let i = firstDayIndex; i > 0; i--) {
+    const dayNum = prevMonthTotalDays - i + 1;
+    const cell = document.createElement('div');
+    cell.className = 'cal-day-cell cal-day-outside';
+    cell.innerHTML = `<span class="cal-day-num">${dayNum}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // 2. Render current month days
+  const today = new Date();
+  for (let day = 1; day <= totalDaysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const cell = document.createElement('div');
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+    cell.className = `cal-day-cell ${isToday ? 'cal-today' : ''}`;
+
+    const dayEvents = state.allEvents.filter(evt => {
+      if (!evt.start_date) return false;
+      return evt.start_date === dateStr || evt.start_date.startsWith(dateStr);
+    });
+
+    let eventsHtml = '';
+    dayEvents.forEach(evt => {
+      eventsHtml += `
+        <div class="cal-event-pill" data-id="${evt.id}" title="${evt.title} (${evt.sector || 'Islamabad'})">
+          <span class="cal-event-dot"></span>
+          <span class="cal-event-title">${evt.title}</span>
+        </div>
+      `;
+    });
+
+    cell.innerHTML = `
+      <div class="cal-day-header">
+        <span class="cal-day-num">${day}</span>
+        ${dayEvents.length > 0 ? `<span class="cal-day-count">${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}</span>` : ''}
+      </div>
+      <div class="cal-day-events">${eventsHtml}</div>
+    `;
+
+    grid.appendChild(cell);
+  }
+
+  // 3. Render next month padding days
+  const totalRendered = firstDayIndex + totalDaysInMonth;
+  const remainingCells = 42 - totalRendered;
+  for (let i = 1; i <= remainingCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day-cell cal-day-outside';
+    cell.innerHTML = `<span class="cal-day-num">${i}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // Add click listeners to event pills in calendar
+  grid.querySelectorAll('.cal-event-pill').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDetailModal(pill.dataset.id);
+    });
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function renderAdminDashboard() {
+  const tableBody = document.getElementById('adminEventsTableBody');
+  const totalEventsEl = document.getElementById('adminTotalEvents');
+  const officialCountEl = document.getElementById('adminOfficialCount');
+  const organizersCountEl = document.getElementById('adminOrganizersCount');
+  const prizeValEl = document.getElementById('adminTotalPrizeVal');
+  const searchInput = document.getElementById('adminSearchInput');
+
+  if (!tableBody) return;
+
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  let totalEvents = state.allEvents.length;
+  let officialCount = 0;
+  let totalPrize = 0;
+  const organizers = new Set();
+
+  state.allEvents.forEach(evt => {
+    if (evt.is_official) officialCount++;
+    if (evt.organizer_name) organizers.add(evt.organizer_name.trim());
+    if (evt.prize_pool) totalPrize += parsePrizePool(evt.prize_pool);
+  });
+
+  if (totalEventsEl) totalEventsEl.textContent = totalEvents;
+  if (officialCountEl) officialCountEl.textContent = officialCount;
+  if (organizersCountEl) organizersCountEl.textContent = organizers.size;
+  if (prizeValEl) prizeValEl.textContent = formatPrizeTotal(totalPrize);
+
+  tableBody.innerHTML = '';
+
+  const filtered = state.allEvents.filter(evt => {
+    if (!query) return true;
+    return (
+      (evt.title || '').toLowerCase().includes(query) ||
+      (evt.category || '').toLowerCase().includes(query) ||
+      (evt.organizer_name || '').toLowerCase().includes(query) ||
+      (evt.sector || '').toLowerCase().includes(query)
+    );
+  });
+
+  if (filtered.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
+          No events match your filter query.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  filtered.forEach(evt => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <span class="cell-title">${evt.title}</span>
+        <span class="cell-subtitle">${evt.sector || 'Islamabad'}</span>
+      </td>
+      <td><span class="category-tag">${evt.category}</span></td>
+      <td>${evt.organizer_name}</td>
+      <td>${formatDate(evt.start_date)}</td>
+      <td>
+        <span class="status-badge ${evt.is_official ? 'official' : 'community'}">
+          <i data-lucide="${evt.is_official ? 'badge-check' : 'users'}" style="width:12px;height:12px;"></i>
+          ${evt.is_official ? 'Official' : 'Community'}
+        </span>
+      </td>
+      <td>
+        <div class="admin-actions">
+          <button class="btn-admin-icon ${evt.is_official ? 'active' : ''} toggle-official-btn" data-id="${evt.id}" title="${evt.is_official ? 'Remove Official Badge' : 'Mark as Official'}">
+            <i data-lucide="badge-check"></i>
+          </button>
+          <button class="btn-admin-icon edit-btn" data-id="${evt.id}" title="Edit Event">
+            <i data-lucide="edit-3"></i>
+          </button>
+          <button class="btn-admin-icon danger delete-btn" data-id="${evt.id}" title="Delete Event">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+async function handleAdminToggleOfficial(id) {
+  const evt = state.allEvents.find(e => e.id === id);
+  if (!evt) return;
+
+  const newStatus = !evt.is_official;
+  evt.is_official = newStatus;
+
+  await supabaseService.updateEvent(id, { is_official: newStatus });
+  showToast(`Event updated to ${newStatus ? 'OFFICIAL' : 'COMMUNITY'} status!`, 'success');
+  renderAdminDashboard();
+  renderGrid();
 }
 
 // MODAL UTILS
