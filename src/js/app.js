@@ -1,8 +1,3 @@
-// =========================================================
-// ISLAMABAD EVENT PORTAL - MAIN UI CONTROLLER
-// Handles UI state, live opportunity board filters, image uploads, and Supabase Auth
-// =========================================================
-
 import { supabaseService } from './supabase.js';
 
 // STATE STORAGE
@@ -130,7 +125,7 @@ const elements = {
   postDeadline: document.getElementById('postDeadline'),
   postPrize: document.getElementById('postPrize'),
   postRegisterUrl: document.getElementById('postRegisterUrl'),
-  
+
   // Image Modes
   modeUploadBtn: document.getElementById('modeUploadBtn'),
   modeUrlBtn: document.getElementById('modeUrlBtn'),
@@ -168,7 +163,7 @@ async function initApp() {
   setupEventListeners();
   setupImageUploadEvents();
   setupCalendarControls();
-  
+
   // Sync live Supabase Auth session if available
   try {
     const liveUser = await supabaseService.getCurrentUser();
@@ -179,10 +174,10 @@ async function initApp() {
   } catch (err) {
     console.warn("Session check exception:", err);
   }
-  
+
   updateSavedBadges();
   updateUserUI();
-  
+
   loadEvents().catch(err => {
     console.error("Non-blocking loadEvents catch:", err);
   });
@@ -220,7 +215,7 @@ function applyFilters() {
     result = result.filter(evt => state.savedEventIds.includes(evt.id));
   } else if (state.currentTab === 'handlers') {
     if (state.currentUser) {
-      result = result.filter(evt => 
+      result = result.filter(evt =>
         evt.organizer_name.toLowerCase().includes(state.currentUser.name?.toLowerCase() || '') ||
         evt.user_id === state.currentUser.email
       );
@@ -466,7 +461,7 @@ function setupImageUploadEvents() {
 
   if (elements.dropzoneBox && elements.postImageFile) {
     elements.dropzoneBox.addEventListener('click', () => elements.postImageFile.click());
-    
+
     elements.postImageFile.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) handleImageFile(file);
@@ -1062,7 +1057,7 @@ function openPostModal() {
   if (elements.editEventId) elements.editEventId.value = '';
   if (elements.postEventForm) elements.postEventForm.reset();
   toggleCustomCategoryField(false);
-  
+
   state.uploadedBannerData = '';
   if (elements.imagePreviewContainer) elements.imagePreviewContainer.style.display = 'none';
   if (elements.dropzoneBox) elements.dropzoneBox.style.display = 'block';
@@ -1527,7 +1522,7 @@ function showToast(message, type = 'info') {
   if (!elements.toastContainer) return;
   const toast = document.createElement('div');
   toast.className = 'toast';
-  
+
   let iconName = 'info';
   if (type === 'success') iconName = 'check-circle';
   if (type === 'warning') iconName = 'alert-triangle';

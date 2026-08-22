@@ -97,18 +97,10 @@ button {
 }
 
 .brand-logo {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #ffffff;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 
@@ -1968,48 +1960,98 @@ button {
 
 /* CREDITS CARD */
 .footer-credits-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
-  padding: 0.85rem 1rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.85rem;
+  position: relative;
+  overflow: hidden;
 }
 
-.credit-item {
+.footer-credits-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand-emerald), var(--brand-primary));
+}
+
+.credit-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.credit-icon {
-  width: 18px;
-  height: 18px;
+.credit-header-icon {
+  width: 16px; height: 16px;
   color: var(--brand-emerald);
-  flex-shrink: 0;
 }
 
-.credit-lbl {
-  display: block;
+.credit-header-text {
   font-size: 0.725rem;
-  color: #64748b;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
 }
 
-.credit-name {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #ffffff;
-  font-family: 'Outfit', sans-serif;
+.credit-people {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.credit-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+.credit-person {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0,0,0,0.2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+  transition: all 0.2s ease;
+}
+
+.credit-person:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.1);
+  transform: translateX(4px);
+}
+
+.credit-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-emerald));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.credit-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.credit-role {
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.credit-person-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+  font-family: 'Outfit', sans-serif;
 }
 
 .footer-hubs-wrap {
